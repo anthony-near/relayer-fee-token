@@ -55,28 +55,28 @@ To get the fungible token metadata:
 near view $CONTRACT_NAME ft_metadata
 ```
 
+To check the initial balance of the account that tokens were minted to:
+```bash
+near view $CONTRACT_NAME ft_balance_of '{"account_id": "relayer-fee-token.testnet"}'
+```
+
 ## Send RFT to another Account
-To make this tutorial easier to copy/paste, we're going to set an environment variable for your account id. In the below command, replace `your_local_testnet_account.testnet` with the account name you have local credentials for, including the `.testnet`:
+Add storage deposit for Bob's account (an account you'd like to send RFT to):
 ```bash
-ID=your_contract_account.testnet
-```
-
-You can tell if the environment variable is set correctly if your command line prints the account name after this command:
-```bash
-echo $ID
-```
-
-Add storage deposit for Bob's account:
-```bash
-near call $ID storage_deposit '' --accountId bob.testnet --amount 0.00125
+near call $CONTRACT_NAME storage_deposit '{"account_id": "bob.testnet"}' --accountId your_local_credentials_account.testnet --amount 0.00125
 ```
 
 Check balance of Bob's account, it should be `0` for now:
 ```bash
-near view $ID ft_balance_of '{"account_id": "'bob.testnet'"}'
+near view $CONTRACT_NAME ft_balance_of '{"account_id": "bob.testnet"}'
 ```
 
 Transfer tokens to Bob from the contract that minted these fungible tokens, exactly 1 yoctoNEAR of deposit should be attached:
 ```bash
-near call $ID ft_transfer '{"receiver_id": "'bob.testnet'", "amount": "19"}' --accountId $ID --amount 0.000000000000000000000001
+near call $CONTRACT_NAME ft_transfer '{"receiver_id": "bob.testnet", "amount": "19"}' --accountId $CONTRACT_NAME --amount 0.000000000000000000000001
+```
+
+Check balance of Bob's account again, it should be `19` for now:
+```bash
+near view $CONTRACT_NAME ft_balance_of '{"account_id": "bob.testnet"}'
 ```
