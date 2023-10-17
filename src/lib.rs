@@ -19,9 +19,9 @@ impl Contract {
     pub fn new() -> Self {
         let mut contract = Self {};
 
-        // nomnomnom.testnet is contract owner and gets initial supply of 1B tokens
-        Owner::init(&mut contract, &"nomnomnom.testnet".parse().unwrap());
-        Nep141Controller::mint(&mut contract, "nomnomnom.testnet".parse().unwrap(), 1000000000u128, None);
+        // relayer-fee-token.testnet is contract owner and gets initial supply of 1B tokens
+        Owner::init(&mut contract, &"relayer-fee-token.testnet".parse().unwrap());
+        Nep141Controller::mint(&mut contract, "relayer-fee-token.testnet".parse().unwrap(), 1000000000u128, None);
 
         contract
     }
