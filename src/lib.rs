@@ -19,15 +19,12 @@ impl Contract {
     pub fn new() -> Self {
         let mut contract = Self {};
 
-        // relayer-fee-token.testnet is contract owner and gets initial supply of 1B tokens
-        Owner::init(&mut contract, &"relayer-fee-token.testnet".parse().unwrap());
-        Nep141Controller::mint(&mut contract, "relayer-fee-token.testnet".parse().unwrap(), 1000000000u128, None);
+        Nep141Controller::mint(&mut contract, "relayer-fee-token.testnet".parse().unwrap(), 1000000000, None);
 
         contract
     }
 
     pub fn mint(&mut self, account_id: AccountId, amount: U128) {
-        <Self as Owner>::require_owner();
         Nep141Controller::mint(self, account_id, amount.into(), None);
     }
 
