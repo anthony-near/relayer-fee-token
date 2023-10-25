@@ -2,29 +2,29 @@
 
 use near_sdk::{
     AccountId, PanicOnDefault, borsh::{BorshDeserialize, BorshSerialize, self},
-    env, json_types::U128, near_bindgen,
+    env, json_types::{Base64VecU8, U128}, near_bindgen, store::Vector,
 };
 use near_sdk_contract_tools::{
-    FungibleToken, hook::Hook, Owner, owner::*, standard::nep141::*, Nep145
+    FungibleToken, hook::Hook, Owner, standard::nep141::*, ft::*
 };
 
-#[derive(BorshSerialize, BorshDeserialize, PanicOnDefault, Owner, FungibleToken, Nep145)]
-#[nep145(force_unregister_hook = "ForceUnregisterHook")]
-#[fungible_token(name = "Relayer Fee Token", symbol = "RFT", decimals = 24, no_hooks)]
+#[derive(BorshSerialize, BorshDeserialize, PanicOnDefault, Owner, FungibleToken)]
+#[fungible_token(transfer_hook = "TransferHook")]
 #[near_bindgen]
 pub struct Contract {
-    pub storage: LookupMap<AccountId, Vec<u64>>,
+    blobs: Vector<Vec<u8>>,
 }
 
-pub struct ForceUnregisterHook;
+pub struct TransferHook;
 
-impl<'a> Hook<Contract, Nep145ForceUnregister<'a>> for ForceUnregisterHook {
-    fn before(_contract: &Contract, _args: &Nep145ForceUnregister<'a>) -> Self {
-        Self
-    }
-
-    fn after(_contract: &mut Contract, _args: &Nep145ForceUnregister<'a>, _state: Self) {
-        log!("After force unregister");
+impl Hook<Contract, Nep141Transfer<'_>> for TransferHook {
+    fn hook<R>(
+        contract: &mut Contract,
+        args: &Nep141Transfer<'_>,
+        f: impl FnOnce(&mut Contract) -> R,
+    ) -> R {
+        contract.require_registration(args.receiver_id);
+        f(contract)
     }
 }
 
@@ -33,36 +33,36 @@ impl Contract {
     #[init]
     pub fn new() -> Self {
         let mut contract = Self {
-            storage: LookupMap::new(b"s"),
+            blobs: Vector::new(b"b"),
         };
 
-        Nep145Controller::set_storage_balance_bounds(
-            &mut contract,
-            &StorageBalanceBounds {
-                min: U128(0),
-                max: None,
-            },
-        );
+        contract.set_metadata(&FungibleTokenMetadata::new(
+            "Relayer Fee Token".to_string(),
+            "RFT".to_string(),
+            24,
+        ));
 
         Nep141Controller::mint(&mut contract, "relayer-fee-token.testnet".parse().unwrap(), 1000000000, None);
 
         contract
     }
 
-    pub fn use_storage(&mut self, num: u64) {
-        let storage_usage_start = env::storage_usage();
-
-        let predecessor = env::predecessor_account_id();
-
-        self.storage.insert(predecessor.clone(), (0..num).collect());
-
-        self.storage.flush();
-
-        let storage_usage = env::storage_usage() - storage_usage_start;
-        let storage_fee = env::storage_byte_cost() * storage_usage as u128;
-
-        Nep145Controller::lock_storage(self, &predecessor, storage_fee.into())
+    pub fn use_storage(&mut self, blob: Base64VecU8) {
+        let storage_start = env::storage_usage();
+        let blob = blob.into();
+        self.blobs.push(blob);
+        self.blobs.flush();
+        let storage_end = env::storage_usage();
+        self.lock_storage(
+            &env::predecessor_account_id(),
+            ((storage_end - storage_start) as u128 * env::storage_byte_cost()).into(),
+        )
             .unwrap_or_else(|e| env::panic_str(&format!("Storage lock error: {}", e)));
+    }
+
+    fn require_registration(&self, account_id: &AccountId) {
+        self.get_storage_balance(account_id)
+            .unwrap_or_else(|e| env::panic_str(&e.to_string()));
     }
 
     pub fn mint(&mut self, account_id: AccountId, amount: U128) {
