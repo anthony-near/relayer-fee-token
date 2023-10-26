@@ -3,6 +3,8 @@ Testnet Fungible Token used to cover fees paid by the Relayer in concert with th
 
 FT contract created using https://near.org/contractwizard.near/widget/ContractWizardUI
 
+## TODO add shared storage contract option based on https://github.com/NearSocial/social-db/blob/master/contract/src/shared_storage.rs
+
 ## Pre-requisites
 To develop Rust contracts you would need to:
 * Install [Rustup](https://rustup.rs/):
