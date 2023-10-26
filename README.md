@@ -55,15 +55,20 @@ To get the fungible token metadata:
 near view $CONTRACT_NAME ft_metadata
 ```
 
-To check the initial balance of the account that tokens were minted to:
+## Send RFT to another Account (example Bob)
+Add storage deposit for your local account:
 ```bash
-near view $CONTRACT_NAME ft_balance_of '{"account_id": "relayer-fee-token.testnet"}'
+near call $CONTRACT_NAME storage_deposit '{"account_id": "your_local_credentials_account.testnet"}' --accountId your_local_credentials_account.tesnet --amount 0.25
 ```
 
-## Send RFT to another Account
-Add storage deposit for Bob's account (an account you'd like to send RFT to):
+Mint some RFT to your local account:
 ```bash
-near call $CONTRACT_NAME storage_deposit '{"account_id": "bob.testnet"}' --accountId your_local_credentials_account.testnet --amount 0.00125
+near call $CONTRACT_NAME mint '{"amount": "1000000000"}' --accountId your_local_credentials_account.testnet
+```
+
+Check balance of your local account, it should be `1000000000` now:
+```bash
+near view $CONTRACT_NAME ft_balance_of '{"account_id": "bob.testnet"}'
 ```
 
 Check balance of Bob's account, it should be `0` for now:
@@ -71,9 +76,14 @@ Check balance of Bob's account, it should be `0` for now:
 near view $CONTRACT_NAME ft_balance_of '{"account_id": "bob.testnet"}'
 ```
 
+Register Bob's account:
+```bash
+near call $CONTRACT_NAME storage_deposit '{"account_id": "bob.testnet"}' --accountId your_local_credentials_account.testnet --amount 0.25
+```
+
 Transfer tokens to Bob from the contract that minted these fungible tokens, exactly 1 yoctoNEAR of deposit should be attached:
 ```bash
-near call $CONTRACT_NAME ft_transfer '{"receiver_id": "bob.testnet", "amount": "19"}' --accountId $CONTRACT_NAME --amount 0.000000000000000000000001
+near call $CONTRACT_NAME ft_transfer '{"receiver_id": "bob.testnet", "amount": "19"}' --accountId your_local_credentials_account.testnet --amount 0.000000000000000000000001
 ```
 
 Check balance of Bob's account again, it should be `19` for now:
